@@ -8,8 +8,14 @@ using UnityEngine.UI;
 /// </summary>
 public class HUD : MonoBehaviour
 {
-    Text prompt, toast, counter;
+    Text prompt, toast, counter, crosshair;
     Coroutine toastCo;
+
+    /// <summary>2D 탑다운 등 조준선이 필요 없을 때 끈다.</summary>
+    public void SetCrosshair(bool on)
+    {
+        if (crosshair != null) crosshair.gameObject.SetActive(on);
+    }
 
     void Awake()
     {
@@ -24,9 +30,9 @@ public class HUD : MonoBehaviour
 
         var t = canvasGo.transform;
 
-        var ch = NewText(t, "Crosshair", 40, TextAnchor.MiddleCenter);
-        ch.text = "+";
-        Anchor(ch, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-25f, -25f), new Vector2(25f, 25f));
+        crosshair = NewText(t, "Crosshair", 40, TextAnchor.MiddleCenter);
+        crosshair.text = "+";
+        Anchor(crosshair, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(-25f, -25f), new Vector2(25f, 25f));
 
         prompt = NewText(t, "Prompt", 28, TextAnchor.MiddleCenter);
         Anchor(prompt, new Vector2(0.5f, 0.4f), new Vector2(0.5f, 0.4f), new Vector2(-350f, -30f), new Vector2(350f, 30f));

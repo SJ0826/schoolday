@@ -56,6 +56,27 @@ public static class Greybox2DBuilder
         rb.gravityScale = 0f; rb.freezeRotation = true;
         player.AddComponent<BoxCollider2D>();
         player.AddComponent<PlayerController2D>();
+        player.AddComponent<PlayerInteractor2D>();
+
+        // 시스템 매니저 (대사·HUD) — 3D에서 쓰던 것 재활용
+        var dlg = new GameObject("Dialogue");
+        dlg.transform.SetParent(root.transform);
+        dlg.AddComponent<DialogueUI>();
+        var hudGo = new GameObject("HUD");
+        hudGo.transform.SetParent(root.transform);
+        hudGo.AddComponent<HUD>().SetCrosshair(false);   // 2D는 조준선 끔
+
+        // 칠판 (조사 대상 — 위쪽 벽 앞)
+        var board = Solid("Chalkboard", root.transform, white, new Color(0.15f, 0.28f, 0.2f),
+            new Vector2(0f, H / 2f - 0.7f), new Vector2(4f, 0.6f));
+        var ex = board.AddComponent<ExamineObject>();
+        ex.label = "칠판"; ex.line = "[ 오늘의 시간표 ]  조례 · 1교시 국어…";
+
+        // 친구 NPC (말 걸기)
+        Npc(root.transform, white, new Color(0.90f, 0.55f, 0.55f), new Vector2(-2f, -1f), "짝꿍",
+            new[] { "왔냐? 침 흘리고 자더라.", "조례 곧 한대.", "오늘 급식 뭐냐?" });
+        Npc(root.transform, white, new Color(0.55f, 0.75f, 0.55f), new Vector2(3f, 1f), "반장",
+            new[] { "자리 앉는 게 좋을걸.", "숙제 했어?" });
 
         // 카메라 (직교 + 따라가기)
         var camGo = new GameObject("Main Camera");
@@ -84,7 +105,7 @@ public static class Greybox2DBuilder
         sr.sprite = sp; sr.color = c; sr.sortingOrder = order;
     }
 
-    static void Solid(string name, Transform parent, Sprite sp, Color c, Vector2 pos, Vector2 size)
+    static GameObject Solid(string name, Transform parent, Sprite sp, Color c, Vector2 pos, Vector2 size)
     {
         var go = new GameObject(name);
         go.transform.SetParent(parent);
@@ -93,6 +114,22 @@ public static class Greybox2DBuilder
         var sr = go.AddComponent<SpriteRenderer>();
         sr.sprite = sp; sr.color = c; sr.sortingOrder = 1;
         go.AddComponent<BoxCollider2D>();
+        return go;
+    }
+
+    // 말 걸 수 있는 친구 NPC (스프라이트 + 콜라이더 + TalkableNPC)
+    static void Npc(Transform parent, Sprite sp, Color c, Vector2 pos, string npcName, string[] lines)
+    {
+        var go = new GameObject($"NPC_{npcName}");
+        go.transform.SetParent(parent);
+        go.transform.position = pos;
+        go.transform.localScale = new Vector3(0.7f, 0.7f, 1f);
+        var sr = go.AddComponent<SpriteRenderer>();
+        sr.sprite = sp; sr.color = c; sr.sortingOrder = 5;
+        go.AddComponent<BoxCollider2D>();
+        var npc = go.AddComponent<TalkableNPC>();
+        npc.npcName = npcName;
+        npc.lines = lines;
     }
 
     // 1x1 흰 스프라이트(도트용, Point 필터)를 만들어 재사용. color/scale로 색·크기 조절.
