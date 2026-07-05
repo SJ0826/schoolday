@@ -1,4 +1,6 @@
+using System.Collections;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 /// <summary>
@@ -66,5 +68,26 @@ public class DialogueUI : MonoBehaviour
     public void Hide()
     {
         if (panel != null) panel.SetActive(false);
+    }
+
+    /// <summary>대사를 한 줄씩 보여주고 Space/Enter/좌클릭으로 넘긴다. 끝나면 숨긴다.</summary>
+    public IEnumerator PlayLines(string[] lines)
+    {
+        if (lines == null) yield break;
+        foreach (var l in lines)
+        {
+            Show(l);
+            yield return null;                 // 표시된 프레임의 입력은 무시
+            while (!Advanced()) yield return null;
+        }
+        Hide();
+    }
+
+    static bool Advanced()
+    {
+        var kb = Keyboard.current;
+        var mouse = Mouse.current;
+        return (kb != null && (kb.spaceKey.wasPressedThisFrame || kb.enterKey.wasPressedThisFrame))
+            || (mouse != null && mouse.leftButton.wasPressedThisFrame);
     }
 }
