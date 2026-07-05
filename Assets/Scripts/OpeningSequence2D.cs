@@ -13,7 +13,7 @@ public class OpeningSequence2D : MonoBehaviour
         "…(책상에 엎드려 자고 있다)",
         "짝꿍  —  야, 닌 오자마자 자냐?",
         "짝꿍  —  담임 뜨기 전에 정신 차려라.",
-        "( WASD 이동 · 가까이서 E로 말 걸기/조사 )",
+        "( WASD 이동 · E로 말 걸기/조사 · 자리에 앉으면 조례가 시작된다 )",
     };
 
     IEnumerator Start()

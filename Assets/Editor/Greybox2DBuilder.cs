@@ -76,6 +76,30 @@ public static class Greybox2DBuilder
         var hudGo = new GameObject("HUD"); hudGo.transform.SetParent(root.transform); hudGo.AddComponent<HUD>().SetCrosshair(false);
         var opening = new GameObject("OpeningSequence"); opening.transform.SetParent(root.transform); opening.AddComponent<OpeningSequence2D>();
 
+        // 자기 자리(앉기 지점) — 플레이어 시작 위치
+        var sit = new GameObject("SitPoint");
+        sit.transform.SetParent(root.transform);
+        sit.transform.position = new Vector3(0f, -H / 2f + 1.4f, 0f);
+        var sitCol = sit.AddComponent<BoxCollider2D>();
+        sitCol.isTrigger = true; sitCol.size = new Vector2(1.2f, 1.2f);
+        sit.AddComponent<SitPoint2D>();
+
+        // 담임 (시작엔 숨김 → 조례 때 교탁으로 이동)
+        var teacher = new GameObject("Teacher");
+        teacher.transform.SetParent(root.transform);
+        teacher.transform.position = new Vector3(0f, -H / 2f + 0.6f, 0f);
+        teacher.transform.localScale = Vector3.one * 1.15f;
+        var tsr = teacher.AddComponent<SpriteRenderer>();
+        tsr.sprite = StudentSprite("teacher", new Color32(88, 90, 104, 255)); // 회색 정장
+        tsr.sortingOrder = 6;
+        teacher.SetActive(false);
+
+        var hr = new GameObject("HomeroomSequence");
+        hr.transform.SetParent(root.transform);
+        var homeroom = hr.AddComponent<HomeroomSequence2D>();
+        homeroom.teacher = teacher.transform;
+        homeroom.podium = new Vector2(0f, H / 2f - 1.8f);
+
         // 친구 NPC (학생 도트, 교복색 다르게)
         Npc(root.transform, "짝꿍", new Color32(170, 80, 80, 255), new Vector2(-2f, -1f),
             new[] { "왔냐? 침 흘리고 자더라.", "조례 곧 한대.", "오늘 급식 뭐냐?" });
