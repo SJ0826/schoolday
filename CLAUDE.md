@@ -1,7 +1,18 @@
 # schoolday — 프로젝트 지침
 
 3D 1인칭 심리 공포게임 《방과 후》. **Unity 6000.5.2f1 / C#**.
-기획 전문: [docs/game-design.md](docs/game-design.md) · 로드맵: [docs/roadmap.md](docs/roadmap.md) · Git 전략: [docs/git-workflow.md](docs/git-workflow.md)
+기획 전문: [docs/game-design.md](docs/game-design.md) (정본은 [Wiki](../../wiki)) · Git 전략: [docs/git-workflow.md](docs/git-workflow.md)
+
+## 기록은 GitHub 네이티브로 관리한다 (중요)
+
+이 레포의 모든 기록·할 일은 GitHub 도구로 관리한다. 별도 문서 파일을 새로 만들지 말고 아래를 쓴다.
+
+- **할 일 · 로드맵 → GitHub Issues.** 새 작업은 이슈로 만들고, 끝나면 PR에서 `Closes #N`으로 닫는다.
+  진행 관리는 마일스톤(`수직 슬라이스`)으로. `docs/roadmap.md`는 쓰지 않는다(이슈로 이관됨).
+- **변경 기록 → Pull Requests.** 무엇을·왜 바꿨는지는 PR 본문에 남긴다.
+- **읽을거리 문서(기획서·전략) → Wiki.** `docs/`의 파일은 위키의 소스 미러다. 문서를 고치면
+  `docs/`를 수정한 뒤 위키에도 반영한다. 사람이 보는 정본은 위키다.
+- **프로젝트 소개 → README.md.**
 
 ## Git — 매번 묻지 말고 알아서 처리한다
 
@@ -12,7 +23,7 @@
   (중간 저장만 필요하면 `/save`.)
 - 커밋 메시지: `<타입>: <한글 요약>` (feat/fix/chore/docs/refactor/art).
 - **`Co-Authored-By:` 줄은 절대 넣지 않는다.**
-- 완료한 로드맵 항목은 `docs/roadmap.md`에서 `[x]` 체크한다.
+- 작업은 관련 이슈와 연결하고, PR 본문에 `Closes #N`을 넣어 머지 시 이슈가 닫히게 한다.
 
 ## Unity 규칙 (중요)
 
