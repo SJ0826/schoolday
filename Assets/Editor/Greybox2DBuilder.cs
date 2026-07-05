@@ -136,13 +136,14 @@ public static class Greybox2DBuilder
         npc.lines = lines;
     }
 
-    // 1x1 흰 스프라이트(도트용, Point 필터)를 만들어 재사용. color/scale로 색·크기 조절.
+    // 흰 스프라이트(도트용, Point 필터)를 만들어 재사용. color/scale로 색·크기 조절.
     static Sprite WhiteSprite()
     {
         const string path = "Assets/Sprites/white.png";
         if (!AssetDatabase.IsValidFolder("Assets/Sprites"))
             AssetDatabase.CreateFolder("Assets", "Sprites");
-        if (AssetDatabase.LoadAssetAtPath<Sprite>(path) == null)
+
+        if (!File.Exists(path))
         {
             var tex = new Texture2D(16, 16);
             var px = new Color32[16 * 16];
@@ -150,9 +151,17 @@ public static class Greybox2DBuilder
             tex.SetPixels32(px); tex.Apply();
             File.WriteAllBytes(path, tex.EncodeToPNG());
             AssetDatabase.ImportAsset(path);
-            var ti = (TextureImporter)AssetImporter.GetAtPath(path);
+        }
+
+        // Sprite / Single 모드 보장 (Multiple로 임포트되면 로드가 null이 됨)
+        var ti = (TextureImporter)AssetImporter.GetAtPath(path);
+        if (ti.textureType != TextureImporterType.Sprite
+            || ti.spriteImportMode != SpriteImportMode.Single
+            || ti.spritePixelsPerUnit != 16)
+        {
             ti.textureType = TextureImporterType.Sprite;
-            ti.spritePixelsPerUnit = 16;      // 스프라이트 1개 = 1 유닛
+            ti.spriteImportMode = SpriteImportMode.Single;
+            ti.spritePixelsPerUnit = 16;       // 스프라이트 1개 = 1 유닛
             ti.filterMode = FilterMode.Point;  // 도트 느낌(선명)
             ti.SaveAndReimport();
         }
