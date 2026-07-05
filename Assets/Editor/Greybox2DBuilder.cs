@@ -95,6 +95,7 @@ public static class Greybox2DBuilder
         camGo.AddComponent<AudioListener>();
         var follow = camGo.AddComponent<CameraFollow2D>();
         follow.target = player.transform; follow.lockY = true; follow.fixedY = 0f;
+        follow.clampToWorld = true; follow.worldLeft = -8.87f; follow.worldRight = 8.87f; // 배경 폭 1774px/100/2
 
         if (!AssetDatabase.IsValidFolder("Assets/Scenes"))
             AssetDatabase.CreateFolder("Assets", "Scenes");
