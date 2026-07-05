@@ -113,6 +113,19 @@ public static class GreyboxClassroomBuilder
         camGo.tag = "MainCamera";
         player.AddComponent<FirstPersonController>();
 
+        // 친구 NPC (플레이어 옆자리 — 오프닝에서 깨우는 친구)
+        var friend = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+        friend.name = "Friend";
+        friend.transform.SetParent(root.transform);
+        friend.transform.localPosition = new Vector3(0.9f, 0.9f, -L / 2f + 1.9f);
+        friend.transform.localScale = new Vector3(0.7f, 0.9f, 0.7f);
+        SetMat(friend, deskMat);
+
+        // 오프닝 시퀀스 매니저 (엎드림→친구 대사→기상→자유 이동)
+        var opening = new GameObject("OpeningSequence");
+        opening.transform.SetParent(root.transform);
+        opening.AddComponent<OpeningSequence>();
+
         // 저장
         if (!AssetDatabase.IsValidFolder("Assets/Scenes"))
             AssetDatabase.CreateFolder("Assets", "Scenes");
