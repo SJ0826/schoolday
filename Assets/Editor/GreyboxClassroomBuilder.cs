@@ -141,17 +141,17 @@ public static class GreyboxClassroomBuilder
         gm.transform.SetParent(root.transform);
         gm.AddComponent<GameManager>();
 
-        // 조례 필수템: 사원증 (교탁 위 — "이게 왜 여기…?")
-        var badge = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        badge.name = "Item_Badge";
-        badge.transform.SetParent(root.transform);
-        badge.transform.localPosition = new Vector3(-2f, 0.86f, L / 2f - 1.5f);
-        badge.transform.localScale = new Vector3(0.32f, 0.03f, 0.2f);
-        SetMat(badge, glassMat);
-        var pi = badge.AddComponent<PickupItem>();
-        pi.itemName = "사원증";
-        pi.isRequired = true;
-        pi.pickupLine = "사원증…? 이게 왜 여기 있지. 내 건가…?";
+        // 첫 위화감: 벽시계 (살펴보면 뭔가 이상함을 눈치챈다 — 수집 아님)
+        var clock = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+        clock.name = "WallClock";
+        clock.transform.SetParent(root.transform);
+        clock.transform.localPosition = new Vector3(0f, 2.5f, L / 2f - 0.16f);
+        clock.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+        clock.transform.localScale = new Vector3(0.7f, 0.06f, 0.7f);
+        SetMat(clock, glassMat);
+        var ex = clock.AddComponent<ExamineObject>();
+        ex.label = "시계";
+        ex.line = "…저 시계, 초침이 안 움직이는 것 같은데. 아니, 거꾸로 도나?";
 
         // 저장
         if (!AssetDatabase.IsValidFolder("Assets/Scenes"))
