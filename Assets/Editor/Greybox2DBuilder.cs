@@ -32,14 +32,24 @@ public static class Greybox2DBuilder
 
         // 플레이어 (임시 도트 — 곧 일러스트로 교체)
         var player = new GameObject("Player");
-        player.transform.position = new Vector3(LEFT + 1.5f, FLOOR_Y + 0.75f, 0f);
         var psr = player.AddComponent<SpriteRenderer>();
-        psr.sprite = StudentSprite("player", new Color32(60, 96, 150, 255));
         psr.sortingOrder = 5;
-        player.transform.localScale = Vector3.one * 1.6f;
+        var girl = EnsureCharacter("girl", 560);
+        if (girl != null)
+        {
+            psr.sprite = girl;                                       // 일러스트(바닥 피벗)
+            player.transform.position = new Vector3(LEFT + 1.5f, FLOOR_Y, 0f);
+        }
+        else
+        {
+            psr.sprite = StudentSprite("player", new Color32(60, 96, 150, 255));
+            player.transform.position = new Vector3(LEFT + 1.5f, FLOOR_Y + 0.75f, 0f);
+            player.transform.localScale = Vector3.one * 1.6f;
+        }
         var rb = player.AddComponent<Rigidbody2D>();
         rb.gravityScale = 0f; rb.freezeRotation = true;
-        var pcol = player.AddComponent<CapsuleCollider2D>(); pcol.size = new Vector2(0.5f, 1f);
+        var pcol = player.AddComponent<CapsuleCollider2D>();
+        pcol.size = new Vector2(0.7f, 2.4f); pcol.offset = new Vector2(0f, 1.2f);
         player.AddComponent<PlayerController2D>();
         player.AddComponent<PlayerInteractor2D>();
 
@@ -57,16 +67,16 @@ public static class Greybox2DBuilder
         // 칠판 조사 (배경의 칠판 위치에 보이지 않는 트리거)
         var boardZone = new GameObject("ChalkboardZone");
         boardZone.transform.SetParent(root.transform);
-        boardZone.transform.position = new Vector3(4.8f, 0.8f, 0f);
-        AddTrigger(boardZone, new Vector2(3f, 2f));
+        boardZone.transform.position = new Vector3(4.8f, FLOOR_Y + 1f, 0f);
+        AddTrigger(boardZone, new Vector2(3f, 5f));   // 바닥~칠판 세로로 넉넉히(발 기준 감지)
         var ex = boardZone.AddComponent<ExamineObject>();
         ex.label = "칠판"; ex.line = "칠판엔 오늘 시간표가 적혀 있다. 조례 · 1교시 국어…";
 
         // 자기 자리(앉기) + 담임 + 조례
         var sit = new GameObject("SitPoint");
         sit.transform.SetParent(root.transform);
-        sit.transform.position = new Vector3(LEFT + 1.5f, FLOOR_Y + 0.75f, 0f);
-        AddTrigger(sit, new Vector2(1.4f, 1.6f));
+        sit.transform.position = new Vector3(LEFT + 1.5f, FLOOR_Y + 0.6f, 0f);
+        AddTrigger(sit, new Vector2(1.4f, 2.8f));
         sit.AddComponent<SitPoint2D>();
 
         var teacher = new GameObject("Teacher");
@@ -121,6 +131,17 @@ public static class Greybox2DBuilder
         return AssetDatabase.LoadAssetAtPath<Sprite>(BG_PATH);
     }
 
+    // 흰 배경 캐릭터 일러스트를 투명 처리 + Sprite(바닥 피벗)로. 이미 처리됐으면 그대로 로드.
+    static Sprite EnsureCharacter(string name, int ppu)
+    {
+        string path = $"Assets/Sprites/{name}.png";
+        var ti = AssetImporter.GetAtPath(path) as TextureImporter;
+        if (ti == null) return null;
+        if (ti.textureType == TextureImporterType.Sprite && ti.spritePixelsPerUnit == ppu)
+            return AssetDatabase.LoadAssetAtPath<Sprite>(path);
+        return BackgroundCutter.CutAndImport(path, ppu, true);
+    }
+
     static SpriteRenderer MakeSR(string name, Transform parent, Sprite sp, Vector2 pos, int order)
     {
         var go = new GameObject(name);
@@ -154,7 +175,7 @@ public static class Greybox2DBuilder
         var sr = go.AddComponent<SpriteRenderer>();
         sr.sprite = StudentSprite($"student_{npcName}", uniform);
         sr.sortingOrder = 5;
-        AddTrigger(go, new Vector2(0.6f, 1f));
+        AddTrigger(go, new Vector2(0.9f, 2.8f));
         var npc = go.AddComponent<TalkableNPC>();
         npc.npcName = npcName; npc.lines = lines;
     }
