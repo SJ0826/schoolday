@@ -76,14 +76,22 @@ public static class GreyboxClassroomBuilder
         const float gx = 1.8f, gz = 1.6f;
         float x0 = -(cols - 1) * gx / 2f;
         float z0 = L / 2f - 4f;              // 앞줄부터 시작
+        float seatX = x0 + gx;               // 플레이어 자리 열(왼쪽에서 두 번째)
+        float seatZ = z0 - (rows - 1) * gz;  // 플레이어 자리 줄(뒷줄)
+        var seatPos = new Vector3(seatX, 0.9f, seatZ - 0.7f);
         for (int r = 0; r < rows; r++)
         {
             for (int c = 0; c < cols; c++)
             {
                 float px = x0 + c * gx;
                 float pz = z0 - r * gz;
-                Box($"Desk_{r}_{c}",  new Vector3(px, 0.38f, pz),        new Vector3(0.6f, 0.75f, 0.5f), deskMat, desks.transform);
+                var desk = Box($"Desk_{r}_{c}", new Vector3(px, 0.38f, pz), new Vector3(0.6f, 0.75f, 0.5f), deskMat, desks.transform);
                 Box($"Chair_{r}_{c}", new Vector3(px, 0.25f, pz - 0.4f), new Vector3(0.45f, 0.5f, 0.45f), deskMat, desks.transform);
+                if (r == rows - 1 && c == 1)   // 플레이어 시작 자리 책상 → 앉기 지점
+                {
+                    var sp = desk.AddComponent<SitPoint>();
+                    sp.seatPosition = seatPos;
+                }
             }
         }
 
@@ -109,10 +117,8 @@ public static class GreyboxClassroomBuilder
         RenderSettings.ambientLight = new Color(0.35f, 0.35f, 0.40f);
 
         // 1인칭 플레이어 (뒷줄 자리에 앉아 시작 — 앞 책상에 엎드림)
-        float seatX = x0 + gx;                 // 뒷줄 왼쪽에서 두 번째 자리
-        float seatZ = z0 - (rows - 1) * gz;    // 뒷줄 책상의 z
         var player = new GameObject("Player");
-        player.transform.position = new Vector3(seatX, 0.9f, seatZ - 0.7f);
+        player.transform.position = seatPos;
         var cc = player.AddComponent<CharacterController>();
         cc.height = 1.7f;
         cc.radius = 0.3f;
@@ -174,6 +180,22 @@ public static class GreyboxClassroomBuilder
         clock.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
         clock.transform.localScale = new Vector3(0.7f, 0.06f, 0.7f);
         SetMat(clock, deskMat);
+
+        // 담임 (시작엔 숨김 → 조례 때 입장해 교탁으로 이동)
+        var teacher = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+        teacher.name = "Teacher";
+        teacher.transform.SetParent(root.transform);
+        teacher.transform.localPosition = new Vector3(-W / 2f + 1f, 0.9f, -L / 2f + 1f);
+        teacher.transform.localScale = new Vector3(0.8f, 1.0f, 0.8f);
+        SetMat(teacher, doorMat);
+        teacher.SetActive(false);
+
+        // 조례 시퀀스 매니저 (자리에 앉으면 SitPoint 가 Begin 호출)
+        var homeroom = new GameObject("HomeroomSequence");
+        homeroom.transform.SetParent(root.transform);
+        var hr = homeroom.AddComponent<HomeroomSequence>();
+        hr.teacher = teacher.transform;
+        hr.teacherPodium = new Vector3(-2f, 0.9f, L / 2f - 2.2f);
 
         // 저장
         if (!AssetDatabase.IsValidFolder("Assets/Scenes"))
