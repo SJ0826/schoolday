@@ -48,8 +48,13 @@ public static class GreyboxClassroomBuilder
         Box("Wall_Right", new Vector3( W / 2f, H / 2f, 0), new Vector3(0.2f, H, L), wallMat, root.transform);
 
         // 칠판 (앞벽) — 시간표를 띄운다 (교시마다 기묘하게 바뀔 예정)
-        var board = Box("Chalkboard", new Vector3(0, 1.7f, L / 2f - 0.11f), new Vector3(4.5f, 1.4f, 0.05f), boardMat, root.transform);
-        var bt = board.AddComponent<BlackboardText>();
+        Box("Chalkboard", new Vector3(0, 1.7f, L / 2f - 0.11f), new Vector3(4.5f, 1.4f, 0.05f), boardMat, root.transform);
+        // 칠판 텍스트는 스케일 1인 별도 오브젝트에 둔다(큐브의 비균등 스케일 전파 방지).
+        var boardText = new GameObject("BoardText");
+        boardText.transform.SetParent(root.transform);
+        boardText.transform.localPosition = new Vector3(0f, 1.7f, L / 2f - 0.16f); // 칠판 앞면(교실 쪽)
+        boardText.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);        // 교실을 향하도록
+        var bt = boardText.AddComponent<BlackboardText>();
         bt.content = "[ 오늘의 시간표 ]\n등교 08:00   ·   조례 08:30\n1교시 국어   ·   2교시 수학\n3교시 영어   ·   4교시 과학";
 
         // 교탁 (앞쪽)
