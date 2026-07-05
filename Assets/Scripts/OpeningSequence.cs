@@ -20,10 +20,10 @@ public class OpeningSequence : MonoBehaviour
     public float sleepHold = 1.5f;   // 자고 있는 시간
     public float wakeDuration = 1.2f; // 기상 연출 시간
 
-    // 카메라 로컬 포즈 — 엎드림 / 정상(눈높이)
-    readonly Vector3 sleepPos = new Vector3(0.10f, -0.05f, 0.15f);
-    readonly Vector3 sleepEuler = new Vector3(12f, 0f, 82f);
-    readonly Vector3 wakePos = new Vector3(0f, 0.7f, 0f);
+    // 카메라 로컬 포즈 — 앞 책상에 엎드림 / 일어선 눈높이
+    readonly Vector3 sleepPos = new Vector3(0.05f, -0.12f, 0.5f);  // 앞 책상에 뺨을 댄 높이·위치
+    readonly Vector3 sleepEuler = new Vector3(18f, 0f, 78f);       // 팔에 얼굴 파묻고 옆으로
+    readonly Vector3 wakePos = new Vector3(0f, 0.7f, 0f);          // 의자에서 일어선 눈높이
 
     FirstPersonController player;
     Transform camT;
