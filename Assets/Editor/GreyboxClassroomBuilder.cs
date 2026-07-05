@@ -47,14 +47,19 @@ public static class GreyboxClassroomBuilder
         Box("Wall_Left",  new Vector3(-W / 2f, H / 2f, 0), new Vector3(0.2f, H, L), wallMat, root.transform);
         Box("Wall_Right", new Vector3( W / 2f, H / 2f, 0), new Vector3(0.2f, H, L), wallMat, root.transform);
 
-        // 칠판 (앞벽)
-        Box("Chalkboard", new Vector3(0, 1.6f, L / 2f - 0.11f), new Vector3(4f, 1.2f, 0.05f), boardMat, root.transform);
+        // 칠판 (앞벽) — 시간표를 띄운다 (교시마다 기묘하게 바뀔 예정)
+        var board = Box("Chalkboard", new Vector3(0, 1.7f, L / 2f - 0.11f), new Vector3(4.5f, 1.4f, 0.05f), boardMat, root.transform);
+        var bt = board.AddComponent<BlackboardText>();
+        bt.content = "[ 오늘의 시간표 ]\n등교 08:00   ·   조례 08:30\n1교시 국어   ·   2교시 수학\n3교시 영어   ·   4교시 과학";
 
         // 교탁 (앞쪽)
         Box("TeacherDesk", new Vector3(-2f, 0.4f, L / 2f - 1.5f), new Vector3(1.2f, 0.8f, 0.6f), deskMat, root.transform);
 
-        // 문 (좌벽 뒤쪽)
-        Box("Door", new Vector3(-W / 2f + 0.12f, 1.0f, -L / 2f + 1.3f), new Vector3(0.1f, 2.0f, 1.0f), doorMat, root.transform);
+        // 문 (좌벽 뒤쪽) — 나가려 하면 조례 전이라 제지당한다
+        var door = Box("Door", new Vector3(-W / 2f + 0.12f, 1.0f, -L / 2f + 1.3f), new Vector3(0.1f, 2.0f, 1.0f), doorMat, root.transform);
+        var doorEx = door.AddComponent<ExamineObject>();
+        doorEx.label = "문 (나가기)";
+        doorEx.line = "…곧 조례가 시작할 거야. 자리에 앉자.";
 
         // 창문 (우벽, 그레이박스 표시)
         Box("Window", new Vector3(W / 2f - 0.12f, 1.6f, 0f), new Vector3(0.08f, 1.3f, 7f), glassMat, root.transform);
@@ -62,10 +67,10 @@ public static class GreyboxClassroomBuilder
         // 학생 책상 + 의자 그리드 (4열 x 4행)
         var desks = new GameObject("StudentDesks");
         desks.transform.SetParent(root.transform);
-        const int cols = 5, rows = 5;
+        const int cols = 4, rows = 3;
         const float gx = 1.8f, gz = 1.6f;
         float x0 = -(cols - 1) * gx / 2f;
-        float z0 = L / 2f - 3.5f;            // 앞줄부터 시작
+        float z0 = L / 2f - 4f;              // 앞줄부터 시작
         for (int r = 0; r < rows; r++)
         {
             for (int c = 0; c < cols; c++)
@@ -98,10 +103,11 @@ public static class GreyboxClassroomBuilder
         RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
         RenderSettings.ambientLight = new Color(0.35f, 0.35f, 0.40f);
 
-        // 1인칭 플레이어 (뒷줄 가운데 책상에 앉아 시작 — 앞 책상에 엎드림)
-        float seatZ = z0 - (rows - 1) * gz;   // 뒷줄 책상의 z
+        // 1인칭 플레이어 (뒷줄 자리에 앉아 시작 — 앞 책상에 엎드림)
+        float seatX = x0 + gx;                 // 뒷줄 왼쪽에서 두 번째 자리
+        float seatZ = z0 - (rows - 1) * gz;    // 뒷줄 책상의 z
         var player = new GameObject("Player");
-        player.transform.position = new Vector3(0f, 0.9f, seatZ - 0.7f);
+        player.transform.position = new Vector3(seatX, 0.9f, seatZ - 0.7f);
         var cc = player.AddComponent<CharacterController>();
         cc.height = 1.7f;
         cc.radius = 0.3f;
@@ -115,13 +121,27 @@ public static class GreyboxClassroomBuilder
         player.AddComponent<FirstPersonController>();
         player.AddComponent<PlayerInteractor>();
 
-        // 친구 NPC (플레이어 옆자리 — 오프닝에서 깨우는 친구)
+        // 친구 NPC (플레이어 옆자리 — 오프닝에서 깨우는 짝꿍)
         var friend = GameObject.CreatePrimitive(PrimitiveType.Capsule);
         friend.name = "Friend";
         friend.transform.SetParent(root.transform);
-        friend.transform.localPosition = new Vector3(1.8f, 0.9f, seatZ - 0.7f);
+        friend.transform.localPosition = new Vector3(seatX + gx, 0.9f, seatZ - 0.7f);
         friend.transform.localScale = new Vector3(0.7f, 0.9f, 0.7f);
         SetMat(friend, deskMat);
+        var friendNpc = friend.AddComponent<TalkableNPC>();
+        friendNpc.npcName = "짝꿍";
+        friendNpc.lines = new[]
+        {
+            "일어났냐? 침 흘리고 자더라.",
+            "어제 그 게임 깼어?",
+            "조례 곧 한대. 담임 또 잔소리하겠네.",
+        };
+
+        // 다른 반 친구들 (말 걸면 평범하게 대답)
+        AddFriend(root.transform, deskMat, new Vector3(x0, 0.9f, z0 - gz - 0.7f), "반 친구",
+            new[] { "아 졸려… 지금 몇 시냐?", "오늘 급식 뭐 나오지?" });
+        AddFriend(root.transform, deskMat, new Vector3(x0 + 2f * gx, 0.9f, z0 - 0.7f), "반장",
+            new[] { "곧 조례야. 자리에 앉는 게 좋을걸.", "숙제 다 했어? 난 또 까먹었네." });
 
         // 오프닝 시퀀스 매니저 (엎드림→친구 대사→기상→자유 이동)
         var opening = new GameObject("OpeningSequence");
@@ -141,17 +161,14 @@ public static class GreyboxClassroomBuilder
         gm.transform.SetParent(root.transform);
         gm.AddComponent<GameManager>();
 
-        // 첫 위화감: 벽시계 (살펴보면 뭔가 이상함을 눈치챈다 — 수집 아님)
+        // 벽시계 (시간이 흐르지 않는다 — 독백 없이 유저가 스스로 눈치채도록)
         var clock = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
         clock.name = "WallClock";
         clock.transform.SetParent(root.transform);
         clock.transform.localPosition = new Vector3(0f, 2.5f, L / 2f - 0.16f);
         clock.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
         clock.transform.localScale = new Vector3(0.7f, 0.06f, 0.7f);
-        SetMat(clock, glassMat);
-        var ex = clock.AddComponent<ExamineObject>();
-        ex.label = "시계";
-        ex.line = "…저 시계, 초침이 안 움직이는 것 같은데. 아니, 거꾸로 도나?";
+        SetMat(clock, deskMat);
 
         // 저장
         if (!AssetDatabase.IsValidFolder("Assets/Scenes"))
@@ -161,7 +178,7 @@ public static class GreyboxClassroomBuilder
         Debug.Log("[SchoolDay] 그레이박스 교실 생성 완료 → Assets/Scenes/Classroom.unity (Play 눌러 걸어다녀 보세요)");
     }
 
-    static void Box(string name, Vector3 pos, Vector3 scale, Material mat, Transform parent)
+    static GameObject Box(string name, Vector3 pos, Vector3 scale, Material mat, Transform parent)
     {
         var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
         go.name = name;
@@ -169,6 +186,21 @@ public static class GreyboxClassroomBuilder
         go.transform.localPosition = pos;
         go.transform.localScale = scale;
         SetMat(go, mat);
+        return go;
+    }
+
+    // 말 걸 수 있는 반 친구(캡슐) 하나를 배치한다.
+    static void AddFriend(Transform parent, Material mat, Vector3 pos, string npcName, string[] lines)
+    {
+        var go = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+        go.name = $"Friend_{npcName}";
+        go.transform.SetParent(parent);
+        go.transform.localPosition = pos;
+        go.transform.localScale = new Vector3(0.7f, 0.9f, 0.7f);
+        SetMat(go, mat);
+        var npc = go.AddComponent<TalkableNPC>();
+        npc.npcName = npcName;
+        npc.lines = lines;
     }
 
     static void SetMat(GameObject go, Material mat)
