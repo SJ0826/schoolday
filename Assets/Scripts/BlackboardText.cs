@@ -16,10 +16,12 @@ public class BlackboardText : MonoBehaviour
 
     void Start()
     {
+        // 방향/위치는 부모(스케일 1인 BoardText 오브젝트)가 담당한다.
+        // 칠판 큐브에 직접 붙이면 비균등 스케일이 전파돼 글자가 왜곡·반전된다.
         var canvasGo = new GameObject("BoardCanvas");
         canvasGo.transform.SetParent(transform, false);
-        canvasGo.transform.localPosition = new Vector3(0f, 0f, -0.06f); // 칠판 앞면(교실 쪽)
-        canvasGo.transform.localRotation = Quaternion.Euler(0f, 180f, 0f); // 교실을 향하도록
+        canvasGo.transform.localPosition = Vector3.zero;
+        canvasGo.transform.localRotation = Quaternion.identity;
         canvasGo.transform.localScale = Vector3.one * 0.01f;
 
         var canvas = canvasGo.AddComponent<Canvas>();
