@@ -2,51 +2,75 @@ using UnityEngine;
 using UnityEditor;
 
 /// <summary>
-/// Render Pipeline Converter가 놓친 머티리얼(핑크로 보이는 것)을 URP/Lit 으로 강제 변환한다.
-/// 기존 메인 텍스처(_MainTex)와 색(_Color)은 URP 프로퍼티(_BaseMap/_BaseColor)로 옮겨 보존.
+/// School 에셋의 핑크(셰이더 깨짐)를 고친다.
+/// 1) 별도 .mat 파일 → URP/Lit 로 변환
+/// 2) FBX 안에 임베드된 머티리얼 → 현재 파이프라인(URP) 셰이더로 다시 임포트
 /// 메뉴 [SchoolDay ▸ School 머티리얼 URP로 고치기].
 /// </summary>
 public static class FixSchoolMaterials
 {
+    const string Root = "Assets/school";
+
     [MenuItem("SchoolDay/School 머티리얼 URP로 고치기")]
     static void Fix()
     {
+        FixLooseMaterials();
+        ReimportModelMaterials();
+        AssetDatabase.Refresh();
+    }
+
+    // 별도 .mat 파일 변환
+    static void FixLooseMaterials()
+    {
         var urpLit = Shader.Find("Universal Render Pipeline/Lit");
-        if (urpLit == null)
-        {
-            Debug.LogError("[SchoolDay] URP/Lit 셰이더를 찾을 수 없습니다.");
-            return;
-        }
+        if (urpLit == null) { Debug.LogError("[SchoolDay] URP/Lit 셰이더 없음"); return; }
 
-        var guids = AssetDatabase.FindAssets("t:Material", new[] { "Assets/school" });
-        int fixedCount = 0;
-
+        var guids = AssetDatabase.FindAssets("t:Material", new[] { Root });
+        int n = 0;
         foreach (var g in guids)
         {
             var path = AssetDatabase.GUIDToAssetPath(g);
             var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
-            if (mat == null) continue;
-            if (mat.shader == urpLit) continue;   // 이미 정상
+            if (mat == null || mat.shader == urpLit) continue;
 
-            // 기존 텍스처/색 최대한 보존
-            Texture tex = null;
-            if (mat.HasProperty("_MainTex")) tex = mat.GetTexture("_MainTex");
-            else if (mat.HasProperty("_BaseMap")) tex = mat.GetTexture("_BaseMap");
-
-            Color col = Color.white;
-            if (mat.HasProperty("_Color")) col = mat.GetColor("_Color");
-            else if (mat.HasProperty("_BaseColor")) col = mat.GetColor("_BaseColor");
+            Texture tex = mat.HasProperty("_MainTex") ? mat.GetTexture("_MainTex")
+                        : mat.HasProperty("_BaseMap") ? mat.GetTexture("_BaseMap") : null;
+            Color col = mat.HasProperty("_Color") ? mat.GetColor("_Color")
+                      : mat.HasProperty("_BaseColor") ? mat.GetColor("_BaseColor") : Color.white;
 
             mat.shader = urpLit;
             if (tex != null) mat.SetTexture("_BaseMap", tex);
             mat.SetColor("_BaseColor", col);
-
             EditorUtility.SetDirty(mat);
-            fixedCount++;
+            n++;
         }
-
         AssetDatabase.SaveAssets();
-        AssetDatabase.Refresh();
-        Debug.Log($"[SchoolDay] 머티리얼 {fixedCount}개를 URP/Lit 으로 변환했습니다. (전체 {guids.Length}개 중)");
+        Debug.Log($"[SchoolDay] 별도 머티리얼 {n}개 URP 변환 (전체 {guids.Length})");
+    }
+
+    // FBX 임베디드 머티리얼 → URP 셰이더로 재임포트
+    static void ReimportModelMaterials()
+    {
+        var guids = AssetDatabase.FindAssets("t:Model", new[] { Root });
+        int n = 0;
+        try
+        {
+            AssetDatabase.StartAssetEditing();
+            foreach (var g in guids)
+            {
+                var path = AssetDatabase.GUIDToAssetPath(g);
+                var imp = AssetImporter.GetAtPath(path) as ModelImporter;
+                if (imp == null) continue;
+                // 현재 렌더 파이프라인(URP)에 맞는 머티리얼로 생성
+                imp.materialImportMode = ModelImporterMaterialImportMode.ImportViaMaterialDescription;
+                imp.SaveAndReimport();
+                n++;
+            }
+        }
+        finally
+        {
+            AssetDatabase.StopAssetEditing();
+        }
+        Debug.Log($"[SchoolDay] 모델 {n}개 URP 머티리얼로 재임포트 완료");
     }
 }
