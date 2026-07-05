@@ -22,9 +22,9 @@ public static class GreyboxClassroomBuilder
     {
         var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
-        var floorMat  = Mat("Greybox_Floor",   new Color(0.62f, 0.62f, 0.64f));
-        var wallMat   = Mat("Greybox_Wall",    new Color(0.78f, 0.78f, 0.80f));
-        var ceilMat   = Mat("Greybox_Ceiling", new Color(0.85f, 0.85f, 0.88f));
+        var floorMat  = Mat("Greybox_Floor",   new Color(0.52f, 0.40f, 0.28f));  // 교실 마루(나무톤)
+        var wallMat   = Mat("Greybox_Wall",    new Color(0.86f, 0.83f, 0.74f));  // 크림색 벽
+        var ceilMat   = Mat("Greybox_Ceiling", new Color(0.90f, 0.90f, 0.92f));
         var deskMat   = Mat("Greybox_Desk",    new Color(0.45f, 0.40f, 0.35f));
         var boardMat  = Mat("Greybox_Board",   new Color(0.15f, 0.28f, 0.20f));
         var doorMat   = Mat("Greybox_Door",    new Color(0.35f, 0.30f, 0.28f));
@@ -47,7 +47,13 @@ public static class GreyboxClassroomBuilder
         Box("Wall_Back",  new Vector3(0, H / 2f, -L / 2f), new Vector3(W, H, 0.2f), wallMat, root.transform);
         Box("Wall_Front", new Vector3(0, H / 2f,  L / 2f), new Vector3(W, H, 0.2f), wallMat, root.transform);
         Box("Wall_Left",  new Vector3(-W / 2f, H / 2f, 0), new Vector3(0.2f, H, L), wallMat, root.transform);
-        Box("Wall_Right", new Vector3( W / 2f, H / 2f, 0), new Vector3(0.2f, H, L), wallMat, root.transform);
+        // 우벽 = 큰 통창 (창밖으로 하늘이 보이도록 창 영역을 비운다)
+        const float sillH = 1.0f;    // 창턱(아래 벽) 높이
+        const float winTopY = 2.5f;  // 창 상단 높이
+        Box("Wall_R_Sill", new Vector3(W / 2f, sillH * 0.5f, 0f), new Vector3(0.2f, sillH, L), wallMat, root.transform);
+        Box("Wall_R_Top",  new Vector3(W / 2f, (winTopY + H) * 0.5f, 0f), new Vector3(0.2f, H - winTopY, L), wallMat, root.transform);
+        for (int i = -1; i <= 1; i++)   // 세로 창틀 살
+            Box($"WinBar_{i}", new Vector3(W / 2f, (sillH + winTopY) * 0.5f, i * (L / 3f)), new Vector3(0.15f, winTopY - sillH, 0.1f), doorMat, root.transform);
 
         // 칠판 (앞벽) — 시간표를 띄운다 (교시마다 기묘하게 바뀔 예정)
         Box("Chalkboard", new Vector3(0, 1.7f, L / 2f - 0.11f), new Vector3(4.5f, 1.4f, 0.05f), boardMat, root.transform);
@@ -67,13 +73,6 @@ public static class GreyboxClassroomBuilder
         var doorEx = door.AddComponent<ExamineObject>();
         doorEx.label = "문 (나가기)";
         doorEx.line = "…곧 조례가 시작할 거야. 자리에 앉자.";
-
-        // 창문 (우벽) — 햇살이 들어오도록 밝게 빛나게(Bloom과 함께 뽀얀 아침 느낌)
-        var sunMat = Mat("Greybox_Sunlight", new Color(1f, 0.98f, 0.9f));
-        sunMat.EnableKeyword("_EMISSION");
-        sunMat.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
-        sunMat.SetColor("_EmissionColor", new Color(1.7f, 1.6f, 1.35f));
-        Box("Window", new Vector3(W / 2f - 0.12f, 1.6f, 0f), new Vector3(0.08f, 1.3f, 7f), sunMat, root.transform);
 
         // 학생 책상 + 의자 그리드 (4열 x 4행)
         var desks = new GameObject("StudentDesks");
@@ -119,8 +118,7 @@ public static class GreyboxClassroomBuilder
         light.intensity = 1.5f;
         light.color = new Color(1f, 0.95f, 0.84f);                      // 따뜻한 햇살
         light.shadows = LightShadows.Soft;
-        RenderSettings.ambientMode = AmbientMode.Flat;
-        RenderSettings.ambientLight = new Color(0.55f, 0.56f, 0.62f);   // 밝은 실내
+        SetupSky(light);   // 맑은 하늘 스카이박스 + 하늘 기반 환경광
 
         // 1인칭 플레이어 (뒷줄 자리에 앉아 시작 — 앞 책상에 엎드림)
         var player = new GameObject("Player");
@@ -214,6 +212,27 @@ public static class GreyboxClassroomBuilder
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/Classroom.unity");
         AssetDatabase.SaveAssets();
         Debug.Log("[SchoolDay] 그레이박스 교실 생성 완료 → Assets/Scenes/Classroom.unity (Play 눌러 걸어다녀 보세요)");
+    }
+
+    // 맑은 아침 하늘 스카이박스 + 하늘 기반 환경광. 창밖으로 보인다.
+    static void SetupSky(Light sun)
+    {
+        const string path = "Assets/Settings/OpeningSky.mat";
+        if (!AssetDatabase.IsValidFolder("Assets/Settings"))
+            AssetDatabase.CreateFolder("Assets", "Settings");
+        AssetDatabase.DeleteAsset(path);
+        var sky = new Material(Shader.Find("Skybox/Procedural"));
+        sky.SetFloat("_SunSize", 0.05f);
+        sky.SetFloat("_AtmosphereThickness", 0.9f);
+        sky.SetColor("_SkyTint", new Color(0.5f, 0.62f, 0.85f));   // 맑은 파랑
+        sky.SetColor("_GroundColor", new Color(0.65f, 0.65f, 0.6f));
+        sky.SetFloat("_Exposure", 1.35f);
+        AssetDatabase.CreateAsset(sky, path);
+
+        RenderSettings.skybox = sky;
+        RenderSettings.sun = sun;
+        RenderSettings.ambientMode = AmbientMode.Skybox;
+        DynamicGI.UpdateEnvironment();
     }
 
     // 오프닝용 밝고 따뜻한 포스트프로세싱(Global Volume). 후반 교시엔 이 값을 어둡게 조정.
