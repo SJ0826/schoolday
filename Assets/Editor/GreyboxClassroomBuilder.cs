@@ -125,7 +125,7 @@ public static class GreyboxClassroomBuilder
         cc.center = new Vector3(0f, 0.85f, 0f);
         var camGo = new GameObject("Camera");
         camGo.transform.SetParent(player.transform);
-        camGo.transform.localPosition = new Vector3(0f, 0.7f, 0f);
+        camGo.transform.localPosition = new Vector3(0f, 1.6f, 0f);  // 선키 눈높이
         camGo.AddComponent<Camera>();
         camGo.AddComponent<AudioListener>();
         camGo.tag = "MainCamera";
