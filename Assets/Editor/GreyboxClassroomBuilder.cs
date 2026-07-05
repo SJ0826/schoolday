@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
 /// <summary>
 /// 0단계: 그레이박스 교실 생성기.
@@ -66,8 +68,12 @@ public static class GreyboxClassroomBuilder
         doorEx.label = "문 (나가기)";
         doorEx.line = "…곧 조례가 시작할 거야. 자리에 앉자.";
 
-        // 창문 (우벽, 그레이박스 표시)
-        Box("Window", new Vector3(W / 2f - 0.12f, 1.6f, 0f), new Vector3(0.08f, 1.3f, 7f), glassMat, root.transform);
+        // 창문 (우벽) — 햇살이 들어오도록 밝게 빛나게(Bloom과 함께 뽀얀 아침 느낌)
+        var sunMat = Mat("Greybox_Sunlight", new Color(1f, 0.98f, 0.9f));
+        sunMat.EnableKeyword("_EMISSION");
+        sunMat.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
+        sunMat.SetColor("_EmissionColor", new Color(1.7f, 1.6f, 1.35f));
+        Box("Window", new Vector3(W / 2f - 0.12f, 1.6f, 0f), new Vector3(0.08f, 1.3f, 7f), sunMat, root.transform);
 
         // 학생 책상 + 의자 그리드 (4열 x 4행)
         var desks = new GameObject("StudentDesks");
@@ -107,14 +113,14 @@ public static class GreyboxClassroomBuilder
         // 조명
         var lightGo = new GameObject("Directional Light");
         lightGo.transform.SetParent(root.transform);
-        lightGo.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
+        lightGo.transform.rotation = Quaternion.Euler(48f, 200f, 0f);   // 창문(오른쪽)에서 비스듬히 드는 아침 햇살
         var light = lightGo.AddComponent<Light>();
         light.type = LightType.Directional;
-        light.intensity = 1.0f;
-        light.color = new Color(1f, 0.98f, 0.92f);
+        light.intensity = 1.5f;
+        light.color = new Color(1f, 0.95f, 0.84f);                      // 따뜻한 햇살
         light.shadows = LightShadows.Soft;
-        RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
-        RenderSettings.ambientLight = new Color(0.35f, 0.35f, 0.40f);
+        RenderSettings.ambientMode = AmbientMode.Flat;
+        RenderSettings.ambientLight = new Color(0.55f, 0.56f, 0.62f);   // 밝은 실내
 
         // 1인칭 플레이어 (뒷줄 자리에 앉아 시작 — 앞 책상에 엎드림)
         var player = new GameObject("Player");
@@ -126,9 +132,11 @@ public static class GreyboxClassroomBuilder
         var camGo = new GameObject("Camera");
         camGo.transform.SetParent(player.transform);
         camGo.transform.localPosition = new Vector3(0f, 1.6f, 0f);  // 선키 눈높이
-        camGo.AddComponent<Camera>();
+        var camc = camGo.AddComponent<Camera>();
         camGo.AddComponent<AudioListener>();
         camGo.tag = "MainCamera";
+        var camData = camc.GetUniversalAdditionalCameraData();
+        if (camData != null) camData.renderPostProcessing = true;   // 포스트프로세싱 켜기
         player.AddComponent<FirstPersonController>();
         player.AddComponent<PlayerInteractor>();
 
@@ -197,12 +205,55 @@ public static class GreyboxClassroomBuilder
         hr.teacher = teacher.transform;
         hr.teacherPodium = new Vector3(-2f, 0.9f, L / 2f - 2.2f);
 
+        // 밝은 청춘 학원물 분위기(포스트프로세싱) — 나중에 교시별로 어둡게 바꿀 예정
+        SetupMood(root.transform);
+
         // 저장
         if (!AssetDatabase.IsValidFolder("Assets/Scenes"))
             AssetDatabase.CreateFolder("Assets", "Scenes");
         EditorSceneManager.SaveScene(scene, "Assets/Scenes/Classroom.unity");
         AssetDatabase.SaveAssets();
         Debug.Log("[SchoolDay] 그레이박스 교실 생성 완료 → Assets/Scenes/Classroom.unity (Play 눌러 걸어다녀 보세요)");
+    }
+
+    // 오프닝용 밝고 따뜻한 포스트프로세싱(Global Volume). 후반 교시엔 이 값을 어둡게 조정.
+    static void SetupMood(Transform parent)
+    {
+        const string path = "Assets/Settings/OpeningMood.asset";
+        if (!AssetDatabase.IsValidFolder("Assets/Settings"))
+            AssetDatabase.CreateFolder("Assets", "Settings");
+        AssetDatabase.DeleteAsset(path);
+        var profile = ScriptableObject.CreateInstance<VolumeProfile>();
+        AssetDatabase.CreateAsset(profile, path);
+
+        var bloom = profile.Add<Bloom>();
+        bloom.intensity.Override(0.9f);
+        bloom.threshold.Override(0.9f);
+        bloom.scatter.Override(0.7f);
+
+        var color = profile.Add<ColorAdjustments>();
+        color.postExposure.Override(0.25f);   // 살짝 밝게
+        color.saturation.Override(12f);        // 청춘스럽게 채도 살짝
+        color.contrast.Override(6f);
+
+        var wb = profile.Add<WhiteBalance>();
+        wb.temperature.Override(12f);          // 따뜻한 톤
+
+        var vig = profile.Add<Vignette>();
+        vig.intensity.Override(0.22f);
+        vig.smoothness.Override(0.6f);
+
+        var tone = profile.Add<Tonemapping>();
+        tone.mode.Override(TonemappingMode.Neutral);
+
+        AssetDatabase.SaveAssets();
+
+        var volGo = new GameObject("Global Volume");
+        volGo.transform.SetParent(parent);
+        var vol = volGo.AddComponent<Volume>();
+        vol.isGlobal = true;
+        vol.priority = 1f;
+        vol.profile = profile;
     }
 
     static GameObject Box(string name, Vector3 pos, Vector3 scale, Material mat, Transform parent)
