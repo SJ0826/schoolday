@@ -113,6 +113,7 @@ public static class GreyboxClassroomBuilder
         camGo.AddComponent<AudioListener>();
         camGo.tag = "MainCamera";
         player.AddComponent<FirstPersonController>();
+        player.AddComponent<PlayerInteractor>();
 
         // 친구 NPC (플레이어 옆자리 — 오프닝에서 깨우는 친구)
         var friend = GameObject.CreatePrimitive(PrimitiveType.Capsule);
@@ -126,6 +127,31 @@ public static class GreyboxClassroomBuilder
         var opening = new GameObject("OpeningSequence");
         opening.transform.SetParent(root.transform);
         opening.AddComponent<OpeningSequence>();
+
+        // 시스템 매니저 (자막·HUD·게임 매니저) — 여러 스크립트가 공유
+        var dlg = new GameObject("Dialogue");
+        dlg.transform.SetParent(root.transform);
+        dlg.AddComponent<DialogueUI>();
+
+        var hudGo = new GameObject("HUD");
+        hudGo.transform.SetParent(root.transform);
+        hudGo.AddComponent<HUD>();
+
+        var gm = new GameObject("GameManager");
+        gm.transform.SetParent(root.transform);
+        gm.AddComponent<GameManager>();
+
+        // 조례 필수템: 사원증 (교탁 위 — "이게 왜 여기…?")
+        var badge = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        badge.name = "Item_Badge";
+        badge.transform.SetParent(root.transform);
+        badge.transform.localPosition = new Vector3(-2f, 0.86f, L / 2f - 1.5f);
+        badge.transform.localScale = new Vector3(0.32f, 0.03f, 0.2f);
+        SetMat(badge, glassMat);
+        var pi = badge.AddComponent<PickupItem>();
+        pi.itemName = "사원증";
+        pi.isRequired = true;
+        pi.pickupLine = "사원증…? 이게 왜 여기 있지. 내 건가…?";
 
         // 저장
         if (!AssetDatabase.IsValidFolder("Assets/Scenes"))
