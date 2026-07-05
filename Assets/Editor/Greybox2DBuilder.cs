@@ -66,6 +66,10 @@ public static class Greybox2DBuilder
         hudGo.transform.SetParent(root.transform);
         hudGo.AddComponent<HUD>().SetCrosshair(false);   // 2D는 조준선 끔
 
+        var opening = new GameObject("OpeningSequence");
+        opening.transform.SetParent(root.transform);
+        opening.AddComponent<OpeningSequence2D>();
+
         // 칠판 (조사 대상 — 위쪽 벽 앞)
         var board = Solid("Chalkboard", root.transform, white, new Color(0.15f, 0.28f, 0.2f),
             new Vector2(0f, H / 2f - 0.7f), new Vector2(4f, 0.6f));
