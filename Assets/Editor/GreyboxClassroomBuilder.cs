@@ -11,9 +11,9 @@ using UnityEditor.SceneManagement;
 /// </summary>
 public static class GreyboxClassroomBuilder
 {
-    const float W = 8f;   // 교실 폭 (x)
-    const float L = 9f;   // 교실 길이 (z), +z 쪽이 칠판(앞)
-    const float H = 3f;   // 천장 높이 (y)
+    const float W = 12f;   // 교실 폭 (x)
+    const float L = 15f;   // 교실 길이 (z), +z 쪽이 칠판(앞)
+    const float H = 3.2f;  // 천장 높이 (y)
 
     [MenuItem("SchoolDay/그레이박스 교실 만들기")]
     public static void Build()
@@ -57,15 +57,15 @@ public static class GreyboxClassroomBuilder
         Box("Door", new Vector3(-W / 2f + 0.12f, 1.0f, -L / 2f + 1.3f), new Vector3(0.1f, 2.0f, 1.0f), doorMat, root.transform);
 
         // 창문 (우벽, 그레이박스 표시)
-        Box("Window", new Vector3(W / 2f - 0.12f, 1.6f, 0f), new Vector3(0.08f, 1.2f, 4f), glassMat, root.transform);
+        Box("Window", new Vector3(W / 2f - 0.12f, 1.6f, 0f), new Vector3(0.08f, 1.3f, 7f), glassMat, root.transform);
 
         // 학생 책상 + 의자 그리드 (4열 x 4행)
         var desks = new GameObject("StudentDesks");
         desks.transform.SetParent(root.transform);
-        const int cols = 4, rows = 4;
-        const float gx = 1.6f, gz = 1.25f;
+        const int cols = 5, rows = 5;
+        const float gx = 1.8f, gz = 1.6f;
         float x0 = -(cols - 1) * gx / 2f;
-        float z0 = L / 2f - 3.0f;            // 앞줄부터 시작
+        float z0 = L / 2f - 3.5f;            // 앞줄부터 시작
         for (int r = 0; r < rows; r++)
         {
             for (int c = 0; c < cols; c++)
@@ -80,7 +80,7 @@ public static class GreyboxClassroomBuilder
         // 사물함 (뒷벽을 따라)
         var lockers = new GameObject("Lockers");
         lockers.transform.SetParent(root.transform);
-        const int nl = 8;
+        const int nl = 12;
         const float lw = 0.45f;
         float lx0 = -(nl - 1) * (lw + 0.02f) / 2f;
         for (int i = 0; i < nl; i++)
@@ -98,9 +98,10 @@ public static class GreyboxClassroomBuilder
         RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Flat;
         RenderSettings.ambientLight = new Color(0.35f, 0.35f, 0.40f);
 
-        // 1인칭 플레이어 (교실 뒤쪽에서 칠판을 바라봄)
+        // 1인칭 플레이어 (뒷줄 가운데 책상에 앉아 시작 — 앞 책상에 엎드림)
+        float seatZ = z0 - (rows - 1) * gz;   // 뒷줄 책상의 z
         var player = new GameObject("Player");
-        player.transform.position = new Vector3(0f, 0.9f, -L / 2f + 1.5f);
+        player.transform.position = new Vector3(0f, 0.9f, seatZ - 0.7f);
         var cc = player.AddComponent<CharacterController>();
         cc.height = 1.7f;
         cc.radius = 0.3f;
@@ -117,7 +118,7 @@ public static class GreyboxClassroomBuilder
         var friend = GameObject.CreatePrimitive(PrimitiveType.Capsule);
         friend.name = "Friend";
         friend.transform.SetParent(root.transform);
-        friend.transform.localPosition = new Vector3(0.9f, 0.9f, -L / 2f + 1.9f);
+        friend.transform.localPosition = new Vector3(1.8f, 0.9f, seatZ - 0.7f);
         friend.transform.localScale = new Vector3(0.7f, 0.9f, 0.7f);
         SetMat(friend, deskMat);
 
